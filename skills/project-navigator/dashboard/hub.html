@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects — Project Navigator</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="error" class="banner banner-error" hidden></div>
+
+  <header id="head" class="app-header hub-header">
+    <div class="brand-block">
+      <span class="product-name">Project Navigator</span>
+      <h1>Projects</h1>
+      <div id="scanned" class="root"></div>
+    </div>
+    <div class="project-progress" aria-label="Portfolio progress">
+      <div class="progress-copy">
+        <span class="progress-label">Portfolio progress</span>
+        <span id="pct" class="pct">—</span>
+      </div>
+      <div class="bar"><div id="bar-fill" class="bar-fill"></div></div>
+      <div class="head-meta">
+        <span id="counts" class="counts"></span>
+        <button id="theme" class="quiet-button theme" title="Light, dark, or system theme">theme</button>
+        <span id="live" class="live" title="Polling every two seconds">Live</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="hub-main">
+    <div class="section-heading">
+      <div>
+        <h2>Tracked projects</h2>
+        <p>Open a project to see its current plan, history, and retired paths.</p>
+      </div>
+    </div>
+    <section id="cards" class="project-list"></section>
+  </main>
+
+  <script src="/hub.js"></script>
+</body>
+</html>

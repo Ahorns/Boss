@@ -1,0 +1,44 @@
+project: {{PROJECT}}
+plan_version: 1
+
+# This is the ONLY file you or an agent edits by hand, and even then prefer the
+# CLI (`pnav start/done/fail/...`) so every transition is validated and logged.
+#
+# `status` is execution only and must be exactly one of:
+#   todo  in_progress  done  failed  blocked  deferred
+# `outcome` is scientific meaning and is independent of status:
+#   active  pending  passed  failed  inconclusive
+#   superseded  deferred  abandoned  not_needed
+# Optional directed `edges:` may use when: next/pass/fail/always.
+#
+# Replace everything below with your real phases and tasks.
+
+nodes:
+  - id: P0
+    name: Define the question
+    status: in_progress
+    goal: State in one sentence what this project must show to be worth doing.
+    children:
+      - id: P0.1
+        name: Write the one-sentence claim
+        status: in_progress
+        goal: The single claim the whole project stands or falls on.
+        success_criteria:
+          - a colleague can restate it correctly after reading it once
+        next_action: Draft the claim and paste it into this node's goal.
+
+      - id: P0.2
+        name: Decide how it would be falsified
+        status: todo
+        goal: The experiment or measurement that would show the claim is wrong.
+        success_criteria:
+          - the failure condition is a number, not an opinion
+
+  - id: P1
+    name: First result
+    status: todo
+    goal: The smallest experiment that produces real evidence.
+    blocked_by:
+      - P0
+
+edges: []
