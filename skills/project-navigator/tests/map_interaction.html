@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../dashboard/style.css">
+<style>#map{width:900px;height:600px}</style></head><body>
+<h1 style="font:600 15px system-ui">Map interaction harness</h1>
+<p style="font:13px system-ui;color:#666">Drives the real pointer handlers and
+checks the layout against several synthetic roadmap shapes. Every value must be true. Serve this directory and open the page:
+<code>python3 -m http.server -d tests 8899</code></p>
+<div id="map"></div><pre id="result">running</pre>
+<script src="../dashboard/map.js"></script>
+<script>
+const state = {
+  project: "Harness", progress: 0.5, mode: "in_progress",
+  nodes: [
+    {id:"A",name:"Phase A",status:"done",parent:null,depth:0,progress:1,is_current:false},
+    {id:"A1",name:"Task one",status:"done",parent:"A",depth:1,progress:1,is_current:false},
+    {id:"A2",name:"Task two",status:"in_progress",parent:"A",depth:1,progress:0.5,is_current:true},
+  ],
+};
+const log = [];
+MAP.render(state, {orientation:"lr", selected:null, onSelect:(id)=>log.push("select:"+id)});
+
+function node(id, parent = null, name = id) {
+  return {id, name, parent, status:"todo", progress:0, is_current:false};
+}
+function noOverlap(layout) {
+  for (let i = 0; i < layout.all.length; i++) for (let j = i + 1; j < layout.all.length; j++) {
+    const a = layout.all[i], b = layout.all[j];
+    if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) return false;
+  }
+  return true;
+}
+function parentsMoveForward(layout) {
+  return layout.edges.every(({parent, child}) => layout.orientation === "lr"
+    ? child.x > parent.x + parent.w
+    : child.y > parent.y + parent.h);
+}
+function validShape(nodes, edges = []) {
+  return ["lr", "td"].every((orientation) => {
+    const layout = MAP.computeLayout({nodes, edges}, orientation);
+    return layout.all.length === nodes.length + 1 && noOverlap(layout) &&
+      parentsMoveForward(layout) && Number.isFinite(layout.maxX) && Number.isFinite(layout.maxY);
+  });
+}
+
+const chain = Array.from({length:12}, (_, i) => node(`C${i}`, i ? `C${i-1}` : null));
+const wide = [node("W"), ...Array.from({length:16}, (_, i) => node(`W${i}`, "W"))];
+const forest = [node("R1"), node("R1A", "R1"), node("R2"), node("R3"), node("R3A", "R3")];
+const uneven = [
+  node("U"), node("U1", "U"), node("U2", "U"), node("U3", "U"),
+  node("U11", "U1"), node("U111", "U11", "A deliberately long roadmap label that must wrap without colliding"),
+  node("U31", "U3"), node("U32", "U3"), node("U321", "U32"),
+];
+const mergeNodes = [node("G"), node("PASS_PATH"), node("FAIL_PATH"), node("MERGE")];
+const mergeEdges = [
+  {from:"G",to:"PASS_PATH",when:"pass"}, {from:"G",to:"FAIL_PATH",when:"fail"},
+  {from:"PASS_PATH",to:"MERGE",when:"next"}, {from:"FAIL_PATH",to:"MERGE",when:"next"},
+];
+
+function pt(el, type, x, y) {
+  el.dispatchEvent(new PointerEvent(type, {
+    bubbles:true, cancelable:true, pointerId:1, clientX:x, clientY:y, isPrimary:true,
+  }));
+}
+const host = document.getElementById("map");
+const target = host.querySelector('.mnode[data-id="A2"] .mbox');
+const r = target.getBoundingClientRect();
+const cx = Math.round(r.left + r.width/2), cy = Math.round(r.top + r.height/2);
+
+// 1. a tap on a node selects it
+pt(host, "pointerdown", cx, cy);
+pt(target, "pointerup", cx, cy);
+const tapped = log.length === 1 && log[0] === "select:A2";
+
+// 2. a drag pans instead of selecting
+const before = {x: MAP.view.x, y: MAP.view.y};
+log.length = 0;
+pt(host, "pointerdown", cx, cy);
+pt(host, "pointermove", cx + 60, cy + 25);
+pt(host, "pointerup", cx + 60, cy + 25);
+const panned = MAP.view.x !== before.x && MAP.view.y !== before.y;
+const noSelectOnDrag = log.length === 0;
+
+// 3. a tap on empty canvas selects nothing
+log.length = 0;
+pt(host, "pointerdown", 5, 5);
+pt(host, "pointerup", 5, 5);
+const emptyIgnored = log.length === 0;
+
+// 4. directed branch/merge labels render and every measured title fits its box
+MAP.render({project:"Branch merge",progress:0,nodes:mergeNodes,edges:mergeEdges},
+  {orientation:"lr",selected:null,onSelect:()=>{}});
+const branchLabelsVisible = [...host.querySelectorAll(".edge-label")]
+  .map((e) => e.textContent).sort().join(",") === "FAIL,PASS";
+const nodeContentFits = [...host.querySelectorAll(".mbody")]
+  .every((e) => e.scrollHeight <= e.clientHeight + 1);
+
+document.getElementById("result").textContent = JSON.stringify(
+  {
+    tapped, panned, noSelectOnDrag, emptyIgnored,
+    deepChainLayout: validShape(chain),
+    wideBranchLayout: validShape(wide),
+    forestLayout: validShape(forest),
+    unevenLongLabelLayout: validShape(uneven),
+    branchMergeLayout: validShape(mergeNodes, mergeEdges),
+    branchLabelsVisible, nodeContentFits,
+  }, null, 1);
+</script></body></html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Navigator</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="error" class="banner banner-error" hidden></div>
+  <div id="warn" class="banner banner-warn" hidden></div>
+  <div id="planchange" class="banner banner-plan" hidden></div>
+
+  <header id="head" class="app-header">
+    <div class="brand-block">
+      <div class="product-row">
+        <span class="product-name">Project Navigator</span>
+        <a id="hublink" class="hublink" href="/hub" hidden>All projects</a>
+      </div>
+      <h1 id="project">…</h1>
+      <div id="root" class="root"></div>
+    </div>
+    <div class="project-progress" aria-label="Project progress">
+      <div class="progress-copy">
+        <span class="progress-label">Overall progress</span>
+        <span id="pct" class="pct">—</span>
+      </div>
+      <div class="bar"><div id="bar-fill" class="bar-fill"></div></div>
+      <div class="head-meta">
+        <span id="plan-version" class="plan-version">v—</span>
+        <span id="counts" class="counts"></span>
+        <button id="theme" class="quiet-button theme" title="Light, dark, or system theme">theme</button>
+        <span id="live" class="live" title="Polling every second">Live</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="focus" class="focus-strip" aria-label="Current work">
+    <div class="focus-marker" aria-hidden="true"></div>
+    <div class="focus-main">
+      <div id="focus-mode" class="focus-label">Current work</div>
+      <div class="focus-title-row">
+        <span id="focus-id" class="focus-id"></span>
+        <strong id="focus-name" class="focus-name">Loading project state…</strong>
+      </div>
+    </div>
+    <div class="focus-next">
+      <span class="focus-label">Next action</span>
+      <span id="focus-next" class="focus-next-text">—</span>
+    </div>
+    <button id="focus-open" class="focus-open" type="button">View details</button>
+  </section>
+
+  <main class="workspace-shell">
+    <section id="tree-pane" class="workspace-pane">
+      <div class="workspace-toolbar">
+        <nav class="tabs" aria-label="Project views">
+          <button id="tab-now" class="tab on" type="button">Now</button>
+          <button id="tab-history" class="tab" type="button">History</button>
+          <button id="tab-activity" class="tab" type="button">Activity</button>
+          <button id="tab-retired" class="tab" type="button">Retired</button>
+        </nav>
+        <div id="nowctl" class="view-switch" aria-label="Current plan view">
+          <button id="view-tree" class="quiet-button on" type="button">Outline</button>
+          <button id="view-map" class="quiet-button" type="button">Graph</button>
+        </div>
+      </div>
+      <div id="tree" class="view-surface"></div>
+      <div id="map-wrap" class="view-surface map-wrap" hidden>
+        <div id="map"></div>
+        <div id="mapctl" class="mapctl" aria-label="Graph controls">
+          <button id="orient" class="quiet-button" type="button" title="Switch orientation">Top to bottom</button>
+          <button id="fit" class="quiet-button" type="button" title="Fit graph to window">Fit view</button>
+        </div>
+      </div>
+      <div id="history" class="view-surface" hidden></div>
+      <div id="activity" class="view-surface" hidden></div>
+      <div id="retired" class="view-surface" hidden></div>
+    </section>
+
+    <aside id="detail-pane" class="detail-pane">
+      <div class="detail-toolbar">
+        <span id="detail-title">Current work</span>
+        <button id="back" class="quiet-button back" type="button" hidden>Back to current</button>
+      </div>
+      <div id="detail"></div>
+    </aside>
+  </main>
+
+  <script src="/map.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

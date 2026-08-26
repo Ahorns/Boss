@@ -1,0 +1,104 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../dashboard/style.css"></head><body>
+  <div id="error" class="banner banner-error" hidden></div>
+  <div id="warn" class="banner banner-warn" hidden></div>
+  <div id="planchange" class="banner banner-plan" hidden></div>
+
+  <header id="head" class="app-header">
+    <div class="brand-block"><div class="product-row"><span class="product-name">Project Navigator</span>
+      <a id="hublink" class="hublink" href="/hub" hidden>All projects</a></div>
+      <h1 id="project">…</h1><div id="root" class="root"></div></div>
+    <div class="project-progress"><div class="progress-copy"><span class="progress-label">Overall progress</span><span id="pct" class="pct">—</span></div>
+      <div class="bar"><div id="bar-fill" class="bar-fill"></div></div><div class="head-meta">
+      <span id="plan-version" class="plan-version">v—</span><span id="counts" class="counts"></span><button id="theme" class="quiet-button theme">theme</button><span id="live" class="live">Live</span></div></div>
+  </header>
+
+  <section id="focus" class="focus-strip"><div class="focus-marker"></div><div class="focus-main">
+    <div id="focus-mode" class="focus-label">Current work</div><div class="focus-title-row"><span id="focus-id" class="focus-id"></span><strong id="focus-name" class="focus-name">Loading…</strong></div></div>
+    <div class="focus-next"><span class="focus-label">Next action</span><span id="focus-next" class="focus-next-text">—</span></div>
+    <button id="focus-open" class="focus-open">View details</button></section>
+
+  <main class="workspace-shell"><section id="tree-pane" class="workspace-pane">
+    <div class="workspace-toolbar"><nav class="tabs"><button id="tab-now" class="tab on">Now</button><button id="tab-history" class="tab">History</button><button id="tab-activity" class="tab">Activity</button><button id="tab-retired" class="tab">Retired</button></nav>
+      <div id="nowctl" class="view-switch"><button id="view-tree" class="quiet-button on">Outline</button><button id="view-map" class="quiet-button">Graph</button></div>
+      </div>
+    <div id="tree" class="view-surface"></div><div id="map-wrap" class="view-surface map-wrap" hidden><div id="map"></div><div id="mapctl" class="mapctl"><button id="orient" class="quiet-button">Top to bottom</button><button id="fit" class="quiet-button">Fit view</button></div></div><div id="history" class="view-surface" hidden></div><div id="activity" class="view-surface" hidden></div><div id="retired" class="view-surface" hidden></div>
+  </section><aside id="detail-pane" class="detail-pane"><div class="detail-toolbar"><span id="detail-title">Current work</span><button id="back" class="quiet-button" hidden>Back to current</button></div><div id="detail"></div></aside></main>
+
+<pre id="result" style="font:12px ui-monospace;padding:16px">running</pre>
+<script>
+const base = (id, name, status, parent, progress, current = false) => ({
+  id, name, status, parent, depth:0, leaf:true, progress, weight:1,
+  criteria:[], evidence:[], blocked_by:[], unmet_blockers:[], is_current:current,
+});
+const STATE = {
+  project: "Synthetic Roadmap", root: "/tmp/synthetic", progress: 0.42, mode: "in_progress",
+  current: "A2", rev: "r1", plan_version: 2, leaf_counts: {done:1, in_progress:1, todo:3}, events: [],
+  plan_change: [], warnings: [], edges: [],
+  history: [{version:1,node_count:5,current:"A1"},{version:2,node_count:6,current:"A2"}],
+  changes: [{change_id:"C0001",from_version:1,to_version:2,reason:"accepted evidence",changes:["added A2"]}],
+  proposals: [{proposal_id:"P0002",status:"proposed",reason:"possible follow-up",suggested_changes:["add C"]}],
+  retired: [{id:"OLD",name:"Superseded route",outcome:"superseded",version:1}], nodes: [
+    {...base("A", "First branch", "in_progress", null, .5), leaf:false},
+    base("A1", "Completed task", "done", "A", 1),
+    {...base("A2", "Current task with a long but ordinary title", "in_progress", "A", .5, true), next_action:"Run the next synthetic validation."},
+    {...base("B", "Independent branch", "todo", null, 0), leaf:false},
+    {...base("B1", "Nested work", "todo", "B", 0), leaf:false},
+    base("B1a", "Deep leaf", "todo", "B1", 0),
+  ],
+};
+STATE.current_node = STATE.nodes[2];
+window.fetch = (url) => Promise.resolve({json: () => Promise.resolve(
+  String(url).includes("/api/hub") ? {projects:[], multi:false} : STATE)});
+try {
+  localStorage.removeItem("pnav-collapsed");
+  localStorage.removeItem("pnav-section");
+  localStorage.removeItem("pnav-now-view");
+  localStorage.removeItem("pnav-orient-v2");
+} catch {}
+</script>
+<script src="../dashboard/map.js"></script><script src="../dashboard/app.js"></script>
+<script>
+setTimeout(() => {
+  const out = {};
+  const tree = document.getElementById("tree");
+  out.continuousTree = !tree.querySelector(".acc-card") && tree.querySelectorAll(".tree-root").length === 2;
+  out.allShapesVisible = tree.querySelectorAll(".row").length === STATE.nodes.length;
+  out.currentTaskProminent = document.getElementById("focus-name").textContent === STATE.current_node.name &&
+    document.getElementById("focus-next").textContent === STATE.current_node.next_action;
+  out.currentRowMarked = !!tree.querySelector('.row.current[data-id="A2"]');
+
+  const knob = tree.querySelector("[data-toggle='A']");
+  out.knobPresent = !!knob;
+  out.knobShowsMinus = knob && knob.textContent.trim() === "\u2212";
+  knob.click();
+  out.collapsesChildren = !document.querySelector('.row[data-id="A1"]') && !document.querySelector('.row[data-id="A2"]');
+  out.knobShowsPlus = document.querySelector("[data-toggle='A']").textContent.trim() === "+";
+  out.persisted = (localStorage.getItem("pnav-collapsed") || "").includes("A");
+  document.querySelector("[data-toggle='A']").click();
+  out.reexpands = !!document.querySelector('.row[data-id="A1"]') && !!document.querySelector('.row[data-id="A2"]');
+
+  const before = document.querySelector(".d-name").textContent;
+  document.querySelector("[data-toggle='A']").click(); document.querySelector("[data-toggle='A']").click();
+  out.toggleDoesNotSelect = before === document.querySelector(".d-name").textContent && before === STATE.current_node.name;
+  document.querySelector('.row[data-id="A1"]').click();
+  out.rowSelects = document.querySelector(".d-name").textContent === "Completed task";
+  document.getElementById("tab-history").click();
+  out.historySeparated = !document.getElementById("history").hidden &&
+    document.getElementById("focus").hidden && document.getElementById("detail-pane").hidden &&
+    document.getElementById("history").textContent.includes("P0002");
+  document.getElementById("tab-retired").click();
+  out.retiredSeparated = !document.getElementById("retired").hidden &&
+    document.getElementById("retired").textContent.includes("Superseded route");
+  document.getElementById("tab-activity").click();
+  out.activityRestored = !document.getElementById("activity").hidden &&
+    document.getElementById("activity").textContent.includes("No activity yet");
+  document.getElementById("tab-now").click();
+  const toolbarHeight = document.querySelector(".workspace-toolbar").getBoundingClientRect().height;
+  document.getElementById("view-map").click();
+  out.nowGraphSwitches = !document.getElementById("map-wrap").hidden &&
+    !document.getElementById("focus").hidden && !document.getElementById("detail-pane").hidden;
+  out.graphControlsInsideCanvas = document.getElementById("map-wrap").contains(document.getElementById("mapctl"));
+  out.toolbarDoesNotJump = document.querySelector(".workspace-toolbar").getBoundingClientRect().height === toolbarHeight;
+  document.getElementById("result").textContent = JSON.stringify(out, null, 1);
+}, 400);
+</script></body></html>
