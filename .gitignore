@@ -1,2 +1,9 @@
+# Python bytecode
 __pycache__/
 *.pyc
+
+# Per-project state. `pnav init` creates .project/ inside whatever project is
+# being tracked - roadmap, events, proposals, history, snapshots. None of it
+# belongs in the skill's own repository, and it would leak project paths and
+# experimental results if it were ever committed here.
+.project/
